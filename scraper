@@ -5,20 +5,16 @@ require 'ruby-debug'
 require 'benchmark'
 require 'mechanize'
 require 'active_support/core_ext/string'
-require 'trollop'
 
 # url = "http://vnthuquan.net/truyen/truyen.aspx?tid=2qtqv3m3237n4n1n1ntn31n343tq83a3q3m3237nvn"
 # url = "http://vnthuquan.net/truyen/truyen.aspx?tid=2qtqv3m3237nqntn1n31n343tq83a3q3m3237nvn" # Anh Hung Xa Dieu
 url = ARGV[0]
-raise "Invalid URL" unless url
-
-opts = Trollop::options do
-  version "VNThuQuan Scraper"
-  banner <<-EOS
+unless url
+  banner = <<-EOS
 Scraping VNThuQuan.net Kung-Fu Novels and.
 
 Usage:
-       ./scraper [options] <url>
+       ./scraper <url>
        
 Example:
        ./scraper http://vnthuquan.net/truyen/truyen.aspx?tid=2qtqv3m3237n4n1n1ntn31n343tq83a3q3m3237nvn
@@ -31,12 +27,11 @@ Example:
         761.html
         index.html
         Đại Đường Song Long Truyện.mobi
-      
-where [options] are:
 EOS
-  opt :output, "Output folder, default to the Novel's name"
+  
+  puts banner
+  exit(1)
 end
-# Trollop::die :volume, "must be non-negative" if opts[:volume] < 0
 
 
 
@@ -107,7 +102,7 @@ class Scraper < Struct.new(:chapters, :title, :author, :out_folder)
         puts "Download Chapter #{chapter_index}: %.3f seconds" % time.real
         write_chapter chapter, chapter_index
         
-        break
+        # break
         
       end
     end
@@ -146,7 +141,8 @@ class Scraper < Struct.new(:chapters, :title, :author, :out_folder)
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         </head>
         <body>
-            <h1>Table of Contents</h1>
+            <h1>#{@title}</h1>
+            <h2>#{@author}</h2>
             <p style="text-indent:0pt">
       HEADER
       @chapters.each_with_index do |chapter, index|
@@ -183,7 +179,7 @@ class Scraper < Struct.new(:chapters, :title, :author, :out_folder)
   def convert_to_mobi
     puts "Converting to .mobi..."
     cmd = %!
-      ebook-convert "#{@toc}" "#{@mobi_file}" --input-profile=kindle --output-profile=kindle --authors="#{@author}" --title="#{@title}" --remove-paragraph-spacing --remove-paragraph-spacing-indent-size -vvv!.squish
+      ebook-convert "#{@toc}" "#{@mobi_file}" --input-profile=kindle --output-profile=kindle --authors="#{@author}" --title="#{@title}" --remove-paragraph-spacing --remove-paragraph-spacing-indent-size=0 --book-producer="Alex Le <alexle@marrily.com>" -v!.squish
     
     time = Benchmark.measure do
       system(cmd)
